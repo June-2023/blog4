@@ -1,0 +1,90 @@
+---
+title: "Machine learning"
+output: github_document
+date: "2023-7-20"
+---
+
+
+# What method did you find most interesting on machine learning?
+
+Machine learning is pretty powerful and useful, I am interested in both supervised learning and unsupervised learning studied in the part. Here I would like to take an example of multiple linear regression. As an extension of simple linear regression, MLR can be used to predict the outcome variable from multiple distinct predictor variables. With different predictor variables and potential interaction, different models can be obtained and compared for optimum model selection for testing data analysis, which has lots of applications.
+
+
+# An example of fitting MLR Models on some data, and provide any relevant output
+
+In the MLR analysis, different variables of the data and parameter were selected for model analysis, and corresponding  the resulting MLRs were obtained and compared.
+ 
+
+```{r machine learning}
+
+library(readr)
+library(corrplot)
+library(knitr)
+library(caret)
+library(ggrastr)
+# data reading
+bikedata <- readr::read_csv("E:/Statistics/ST558/homework8/work8/SeoulBikeData.csv",locale=locale(encoding="latin1"))
+
+# Date dropping 
+bikedata2 <- subset(bikedata, select = -c(Date))
+
+
+# New variable creation
+
+bikedata2$logicRent <- ifelse(bikedata2$`Rented Bike Count` >= 500, 1, 0)
+
+
+# Split the data into a training and test set (80/20 split)
+
+train <- sample(1:nrow(bikedata2), size = nrow(bikedata2)*.8)
+test <- setdiff(1:nrow(bikedata2), train)
+
+# Training and testing data subsets
+
+bikeTrain <- bikedata2[train, ]
+bikeTest <- bikedata2[test, ]
+
+# Remove columns from data
+
+biketraining <- subset(bikeTrain, select = -c(logicRent, `Dew point temperature(°C)`,
+`Functioning Day`))
+
+biketesting <- subset(bikeTest, select = -c(logicRent, `Dew point temperature(°C)`,
+`Functioning Day`))
+
+# MLR1 with all predictors
+fit1 <- train(`Rented Bike Count` ~ . , data = biketraining, method = "lm",
+preProcess = c("center", "scale"),
+trControl = trainControl(method = "cv", number = 5))
+
+# MLR2 with all predictors and interaction
+fit2 <- train(`Rented Bike Count` ~ .^2, data = biketraining, method = "lm",
+preProcess = c("center", "scale"),
+trControl = trainControl(method = "cv", number = 5))
+
+# MLR3 with three variables dropping
+fit3 <- train(`Rented Bike Count` ~ . - `Visibility (10m)` -
+`Snowfall (cm)`, data = biketraining, method = "lm",
+preProcess = c("center", "scale"),
+trControl = trainControl(method = "cv", number = 5))
+
+# MLR4 with some variables dropping  and few quadratic terms addition
+
+fit4 <- train(`Rented Bike Count` ~ . - `Visibility (10m)` - `Snowfall (cm)`- `Solar Radiation (MJ/m2)` + I(Hour^2) + I(`Humidity(%)`^2), data = biketraining, method = "lm",
+preProcess = c("center", "scale"),
+trControl = trainControl(method = "cv", number = 5))
+
+# MLR5 with some variables dropping and some interactions addition
+fit5 <- train(`Rented Bike Count` ~ . - `Wind speed (m/s)`  +
+Hour:`Solar Radiation (MJ/m2)` + `Temperature(°C)`:`Visibility (10m)` ,
+data = biketraining, method = "lm",
+preProcess = c("center", "scale"),
+trControl = trainControl(method = "cv", number = 5))
+
+
+# Comparison of all models
+data.frame(t(fit1$results), t(fit2$results), t(fit3$results), t(fit4$results),
+t(fit5$results)) 
+
+
+```
